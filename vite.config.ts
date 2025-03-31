@@ -4,6 +4,7 @@ import {
 } from '@remix-run/dev'
 import { defineConfig } from 'vite'
 import tsconfigPaths from 'vite-tsconfig-paths'
+// import { plugin as markdown, Mode } from 'vite-plugin-markdown'
 
 declare module '@remix-run/cloudflare' {
   interface Future {
@@ -13,6 +14,10 @@ declare module '@remix-run/cloudflare' {
 
 export default defineConfig({
   plugins: [
+    // markdown({
+    //   mode: [Mode.REACT, Mode.HTML],
+    //   markdownIt: {},
+    // }),
     remixCloudflareDevProxy(),
     remix({
       future: {
