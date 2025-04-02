@@ -36,6 +36,7 @@ export default function Index() {
         <h1>Jsonflare</h1>
       </div>
       <div className='prose'>
+        <p>Store & retrieve your JSON data easily.</p>
         <Markdown>{apiDocument}</Markdown>
       </div>
     </div>
