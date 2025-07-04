@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "jsonflare2",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-07-04",
+  "observability": {
+    "enabled": true
+  },
+  "kv_namespaces": [
+    {
+      "binding": "records",
+      "id": "29601883156d4e2cbbf28acb2c8b6783",
+      "preview_id": "6044ec2ab3e646e4b8616a6de2ffac6b"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "name": "jsonflare2",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy --minify",
+    "cf-typegen": "wrangler types --env-interface CloudflareBindings"
+  },
+  "dependencies": {
+    "hono": "^4.8.3",
+    "nanoid": "^5.1.5"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250703.0",
+    "typescript": "^5.8.3",
+    "wrangler": "^4.4.0"
+  }
+}
