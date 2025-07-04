@@ -1,11 +1,25 @@
 import { nanoid } from '../lib/nanoid'
 
+interface RecordMetadataObject {
+  createdAt: string
+  updatedAt: string
+}
+
 export class Record {
+  public metadata: RecordMetadata
   constructor(
     public id: string,
     public data: unknown,
-    public metadata: RecordMetadata
-  ) {}
+    metadata: RecordMetadataObject | RecordMetadata
+  ) {
+    this.metadata = RecordMetadata.fromObject(metadata)
+  }
+
+  setData = (data: unknown) => {
+    console.log(`Record ${JSON.stringify(this)}}`)
+    this.data = data
+    this.metadata.setUpdatedAt()
+  }
 
   static fromData(data: unknown) {
     const createdAt = new Date().toISOString()
@@ -25,7 +39,16 @@ export class Record {
 export class RecordMetadata {
   constructor(public createdAt: string, public updatedAt: string) {}
 
-  setUpdatedAt(date?: Date | string) {
+  static fromObject(
+    obj: RecordMetadataObject | RecordMetadata
+  ): RecordMetadata {
+    if (obj instanceof RecordMetadata) {
+      return obj
+    }
+    return new RecordMetadata(obj.createdAt, obj.updatedAt)
+  }
+
+  setUpdatedAt = (date?: Date | string) => {
     date = date || new Date()
     this.updatedAt = date instanceof Date ? date.toISOString() : date
   }

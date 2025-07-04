@@ -47,16 +47,16 @@ export class RecordService {
   async update(id: string, data: unknown): Promise<Record | null>
   async update(entry: string | Record, data: unknown): Promise<Record | null> {
     const refKey = this.refKey(entry)
-    const record = await this.get(refKey)
+    const id = typeof entry === 'string' ? entry : entry.id
+    const record = await this.get(id)
     if (!record) return null
 
-    const updatedRecord = new Record(record.id, data, record.metadata)
-    updatedRecord.metadata.setUpdatedAt()
+    record.setData(data)
 
-    await this.kv.put(refKey, JSON.stringify(updatedRecord.data), {
-      metadata: updatedRecord.metadata,
+    await this.kv.put(refKey, JSON.stringify(record.data), {
+      metadata: record.metadata,
     })
-    return updatedRecord
+    return record
   }
 
   async delete(id: string): Promise<boolean>
