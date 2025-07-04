@@ -5,10 +5,12 @@ import { RecordService } from '../service/record.service'
 import { HTTPException } from 'hono/http-exception'
 import { validateAccessKey } from './middlewares/validate-access-key'
 import { serviceInjector } from './middlewares/service-injector'
+import { createRecordResponse } from './middlewares/create-record-response'
 
 type Env = {
   Variables: {
     recordService: RecordService
+    sendRecord: (record: Record) => Response
   }
   Bindings: Bindings
 }
@@ -16,6 +18,7 @@ type Env = {
 const app = new Hono<Env>()
 
 app.use(serviceInjector)
+app.use(createRecordResponse)
 
 app.post('/', async c => {
   const data = await c.req.json()
@@ -26,9 +29,7 @@ app.post('/', async c => {
   const record = Record.fromData(data)
   const createdRecord = await recordService.create(record, accessKey)
 
-  return c.json(createdRecord, 200, {
-    'X-Access-Key': accessKey,
-  })
+  return c.var.sendRecord(createdRecord)
 })
 
 app.get('/:id', validateAccessKey, async c => {
@@ -40,7 +41,7 @@ app.get('/:id', validateAccessKey, async c => {
     throw new HTTPException(404, { message: 'Record not found' })
   }
 
-  return c.json(record)
+  return c.var.sendRecord(record)
 })
 
 app.put('/:id', validateAccessKey, async c => {
@@ -53,7 +54,7 @@ app.put('/:id', validateAccessKey, async c => {
     throw new HTTPException(404, { message: 'Record not found' })
   }
 
-  return c.json(updatedRecord)
+  return c.var.sendRecord(updatedRecord)
 })
 
 app.delete('/:id', validateAccessKey, async c => {
