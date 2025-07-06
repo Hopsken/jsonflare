@@ -7,15 +7,15 @@ import { validateAccessKey } from './middlewares/validate-access-key'
 import { serviceInjector } from './middlewares/service-injector'
 import { createRecordResponse } from './middlewares/create-record-response'
 
-type Env = {
+type HonoEnv = {
   Variables: {
     recordService: RecordService
     sendRecord: (record: Record) => Response
   }
-  Bindings: Bindings
+  Bindings: Env
 }
 
-const app = new Hono<Env>()
+const app = new Hono<HonoEnv>()
 
 app.use(serviceInjector)
 app.use(createRecordResponse)

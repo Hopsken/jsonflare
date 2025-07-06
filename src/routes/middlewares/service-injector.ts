@@ -5,7 +5,7 @@ export const serviceInjector = createMiddleware<{
   Variables: {
     recordService: RecordService
   }
-  Bindings: Bindings
+  Bindings: Env
 }>((c, next) => {
   c.set('recordService', new RecordService(c.env.records))
   return next()

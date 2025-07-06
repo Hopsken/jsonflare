@@ -6,6 +6,7 @@
   "observability": {
     "enabled": true
   },
+  "routes": [{ "pattern": "api.jsonflare.com", "custom_domain": true }],
   "kv_namespaces": [
     {
       "binding": "records",

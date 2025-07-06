@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 
 import records from './routes/records'
 
-const app = new Hono<{ Bindings: Bindings }>()
+const app = new Hono<{ Bindings: Env }>()
 
 app.get('/', c => {
   return c.text('Hello Hono!')
