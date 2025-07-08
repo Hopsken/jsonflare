@@ -6,6 +6,7 @@ import { HTTPException } from 'hono/http-exception'
 import { validateAccessKey } from './middlewares/validate-access-key'
 import { serviceInjector } from './middlewares/service-injector'
 import { createRecordResponse } from './middlewares/create-record-response'
+import { host } from '../middlewares/host'
 
 type HonoEnv = {
   Variables: {
@@ -19,6 +20,7 @@ const app = new Hono<HonoEnv>()
 
 app.use(serviceInjector)
 app.use(createRecordResponse)
+app.use(host('api.jsonflare.com'))
 
 app.post('/', async c => {
   const data = await c.req.json()
