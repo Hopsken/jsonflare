@@ -7,6 +7,9 @@
     "enabled": true
   },
   "routes": [{ "pattern": "api.jsonflare.com", "custom_domain": true }],
+  "assets": {
+    "directory": "public"
+  },
   "kv_namespaces": [
     {
       "binding": "records",

@@ -1,12 +1,11 @@
 import { Hono } from 'hono'
 
+import homepage from './routes/_index'
 import records from './routes/records'
 
 const app = new Hono<{ Bindings: Env }>()
 
-app.get('/', c => {
-  return c.text('Hello Hono!')
-})
+app.route('/', homepage)
 
 app.route('/r', records)
 
