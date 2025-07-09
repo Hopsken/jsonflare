@@ -5,6 +5,7 @@
     "deploy": "wrangler deploy --minify",
     "cf-typegen": "wrangler types"
   },
+  "packageManager": "pnpm@9.15.0",
   "dependencies": {
     "@hono/zod-validator": "^0.4.3",
     "@scalar/hono-api-reference": "^0.9.9",
