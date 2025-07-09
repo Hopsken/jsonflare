@@ -1,5 +1,7 @@
 import { JSONValue } from 'hono/utils/types'
 import { Record, RecordMetadata, RecordMetadataObject } from '../model/record'
+import { JSONPatchDocument } from 'immutable-json-patch'
+import { JSONPatch } from '../model/json'
 
 export class RecordService {
   constructor(private readonly kv: KVNamespace) {}
@@ -69,6 +71,25 @@ export class RecordService {
     if (!record) return null
 
     record.setData(data)
+
+    await this.kv.put(refKey, JSON.stringify(record.data), {
+      metadata: record.metadata,
+    })
+    return record
+  }
+
+  async patch(record: Record, data: JSONPatch[]): Promise<Record | null>
+  async patch(id: string, data: JSONPatch[]): Promise<Record | null>
+  async patch(
+    entry: string | Record,
+    data: JSONPatch[]
+  ): Promise<Record | null> {
+    const refKey = this.refKey(entry)
+    const id = typeof entry === 'string' ? entry : entry.id
+    const record = await this.get(id)
+    if (!record) return null
+
+    record.applyPatch(data)
 
     await this.kv.put(refKey, JSON.stringify(record.data), {
       metadata: record.metadata,

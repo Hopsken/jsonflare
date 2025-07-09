@@ -10,13 +10,17 @@ import { serviceInjector } from './middlewares/service-injector'
 import { host } from '../middlewares/host'
 import z from 'zod'
 import 'zod-openapi/extend'
+import { JSONPatchSchema } from '../model/json'
 
 const app = new Hono()
 
 app.use(serviceInjector)
 app.use(host('api.jsonflare.com'))
 
-const headerSchema = z.object({ 'X-Access-Key': z.string().optional() })
+const headerSchema = z.object({
+  'X-Access-Key': z.string().optional(),
+  'Content-Type': z.literal('application/json'),
+})
 const paramsSchema = z.object({
   id: z.string().openapi({ description: 'record id' }),
 })
@@ -136,6 +140,44 @@ app.put(
     const recordService = c.get('recordService')
 
     const updatedRecord = await recordService.update(id, data)
+    if (!updatedRecord) {
+      throw new HTTPException(404, { message: 'Record not found' })
+    }
+
+    return c.json(updatedRecord.data as object)
+  }
+)
+
+app.patch(
+  '/:id',
+  describeRoute({
+    description: 'Patch a record using JSON Patch',
+    responses: responseDescription(
+      z.any().openapi({
+        description: 'Any JSON value',
+        ref: 'JSON',
+      })
+    ),
+  }),
+  zValidator('header', headerSchema),
+  zValidator('param', paramsSchema),
+  zValidator(
+    'json',
+    z.array(
+      JSONPatchSchema.openapi({
+        description: 'A JSON Patch operation',
+        ref: 'JSON Patch Operation',
+      })
+    )
+  ),
+  validateAccessKey,
+  async c => {
+    const id = c.req.valid('param').id
+    const recordService = c.get('recordService')
+
+    const patch = c.req.valid('json')
+
+    const updatedRecord = await recordService.patch(id, patch)
     if (!updatedRecord) {
       throw new HTTPException(404, { message: 'Record not found' })
     }

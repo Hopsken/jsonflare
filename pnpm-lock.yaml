@@ -20,6 +20,9 @@ importers:
       hono-openapi:
         specifier: ^0.4.8
         version: 0.4.8(@hono/zod-validator@0.4.3(hono@4.8.3)(zod@3.25.76))(hono@4.8.3)(openapi-types@12.1.3)(zod-openapi@4.2.4(zod@3.25.76))(zod@3.25.76)
+      immutable-json-patch:
+        specifier: ^6.0.1
+        version: 6.0.1
       nanoid:
         specifier: ^5.1.5
         version: 5.1.5
@@ -517,6 +520,9 @@ packages:
     resolution: {integrity: sha512-jYZ6ZtfWjzBdh8H/0CIFfCBHaFL75k+KMzaM177hrWWm2TWL39YMYaJgB74uK/niRc866NMlH9B8uCvIo284WQ==}
     engines: {node: '>=16.9.0'}
 
+  immutable-json-patch@6.0.1:
+    resolution: {integrity: sha512-BHL/cXMjwFZlTOffiWNdY8ZTvNyYLrutCnWxrcKPHr5FqpAb6vsO6WWSPnVSys3+DruFN6lhHJJPHi8uELQL5g==}
+
   is-arrayish@0.3.2:
     resolution: {integrity: sha512-eVRqCvVlZbuw3GrM63ovNSNAeA1K16kaR/LRY/92w0zxQ5/1YzwblUX652i4Xs9RwAGjW9d9y6X88t8OaAJfWQ==}
 
@@ -973,6 +979,8 @@ snapshots:
       zod-openapi: 4.2.4(zod@3.25.76)
 
   hono@4.8.3: {}
+
+  immutable-json-patch@6.0.1: {}
 
   is-arrayish@0.3.2: {}
 

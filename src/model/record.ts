@@ -1,7 +1,8 @@
 import z from 'zod'
+import { immutableJSONPatch, JSONPatchDocument } from 'immutable-json-patch'
 import { JSONValue } from 'hono/utils/types'
 import { nanoid } from '../lib/nanoid'
-import { JSONValueSchema } from './json'
+import { JSONPatch, JSONValueSchema } from './json'
 
 export const RecordMetaDataSchema = z.object({
   createdAt: z.string().datetime(),
@@ -28,6 +29,12 @@ export class Record {
   setData = (data: JSONValue) => {
     this.data = data
     this.metadata.setUpdatedAt()
+  }
+
+  applyPatch = (patch: JSONPatch[]) => {
+    const updated = immutableJSONPatch(this.data, patch as JSONPatchDocument)
+    this.setData(updated as JSONValue)
+    return updated
   }
 
   static fromData(data: JSONValue) {
