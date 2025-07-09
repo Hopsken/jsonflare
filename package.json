@@ -1,7 +1,7 @@
 {
   "name": "jsonflare",
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "wrangler dev --host localhost",
     "deploy": "wrangler deploy --minify",
     "cf-typegen": "wrangler types"
   },

@@ -1,5 +1,6 @@
 import { css } from 'hono/css'
 import { Layout } from './Layout'
+import { APIDescription } from './APIDescrption'
 
 const containerCls = css`
   max-width: 48rem; /* Tailwind's max-w-7xl */
@@ -39,6 +40,8 @@ export default function Index() {
               on Cloudflare Worker.
             </p>
           </details>
+
+          <APIDescription />
         </div>
       </div>
     </Layout>

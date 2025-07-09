@@ -11,13 +11,13 @@ Store a JSON record.
 **Headers**:
 
 - Content-Type: application/json
-- X-Api-Key: <api-key> (optional, if not specific, a random one will be generated for your and returned along with the response header.)
+- X-Access-Key: <access-key> (optional, if not specific, a random one will be generated for your and returned along with the response header.)
 
 **Response**:
 
 ```json
 // headers
-x-api-key: <api-key>
+X-Access-Key: <access-key>
 
 // body
 {
@@ -43,7 +43,7 @@ Read a stored JSON record.
 **Headers**:
 
 - Content-Type: application/json
-- X-Api-Key: <api-key> (required)
+- X-Access-Key: <access-key> (required)
 
 **Response**:
 
@@ -71,7 +71,7 @@ Update a stored JSON record.
 **Headers**:
 
 - Content-Type: application/json
-- X-Api-Key: <api-key> (required)
+- X-Access-Key: <access-key> (required)
 
 **Body**:
 
@@ -103,7 +103,7 @@ Delete a stored JSON record.
 **Headers**:
 
 - Content-Type: application/json
-- X-Api-Key: <api-key> (required)
+- X-Access-Key: <access-key> (required)
 
 **Response**:
 
