@@ -45,13 +45,16 @@ export default function Index() {
             <a href='/openapi'>OpenAPI Schema</a>
           </p>
 
-          <details>
-            <summary>How this works</summary>
-            <p>
-              JSONFlare is a simple wrapper of Cloudflare KV namespace. Running
-              on Cloudflare Worker.
-            </p>
-          </details>
+          <div>
+            <h2>Key features</h2>
+            <ul>
+              <li>Store and hosting any JSON objects</li>
+              <li>Account-less, no need to create an account</li>
+              <li>Easy to use RESTful API</li>
+              <li>Use JSON-Patch for partial updates</li>
+              <li>OpenAPI schema for easy integration</li>
+            </ul>
+          </div>
         </div>
       </div>
     </Layout>
