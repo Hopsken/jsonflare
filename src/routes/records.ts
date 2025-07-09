@@ -5,7 +5,6 @@ import { RecordService } from '../service/record.service'
 import { HTTPException } from 'hono/http-exception'
 import { validateAccessKey } from './middlewares/validate-access-key'
 import { serviceInjector } from './middlewares/service-injector'
-import { createRecordResponse } from './middlewares/create-record-response'
 import { host } from '../middlewares/host'
 
 type HonoEnv = {
@@ -19,7 +18,6 @@ type HonoEnv = {
 const app = new Hono<HonoEnv>()
 
 app.use(serviceInjector)
-app.use(createRecordResponse)
 app.use(host('api.jsonflare.com'))
 
 app.post('/', async c => {
@@ -31,7 +29,9 @@ app.post('/', async c => {
   const record = Record.fromData(data)
   const createdRecord = await recordService.create(record, accessKey)
 
-  return c.var.sendRecord(createdRecord)
+  c.header('X-Access-Key', accessKey)
+  c.header('X-Record-Id', createdRecord.id)
+  return c.json(createdRecord.data as object)
 })
 
 app.get('/:id', validateAccessKey, async c => {
@@ -43,7 +43,19 @@ app.get('/:id', validateAccessKey, async c => {
     throw new HTTPException(404, { message: 'Record not found' })
   }
 
-  return c.var.sendRecord(record)
+  return c.json(record.data as object)
+})
+
+app.get('/:id/metadata', validateAccessKey, async c => {
+  const id = c.req.param('id')
+  const recordService = c.get('recordService')
+
+  const metadata = await recordService.getMetadata(id)
+  if (!metadata) {
+    throw new HTTPException(404, { message: 'Record not found' })
+  }
+
+  return c.json(metadata)
 })
 
 app.put('/:id', validateAccessKey, async c => {
@@ -56,7 +68,7 @@ app.put('/:id', validateAccessKey, async c => {
     throw new HTTPException(404, { message: 'Record not found' })
   }
 
-  return c.var.sendRecord(updatedRecord)
+  return c.json(updatedRecord.data as object)
 })
 
 app.delete('/:id', validateAccessKey, async c => {
@@ -65,7 +77,7 @@ app.delete('/:id', validateAccessKey, async c => {
 
   await recordService.delete(id)
 
-  return c.json({ success: true })
+  return c.json({ ok: true })
 })
 
 export default app

@@ -1,4 +1,5 @@
-import { Record } from '../model/record'
+import { JSONValue } from 'hono/utils/types'
+import { Record, RecordMetadata, RecordMetadataObject } from '../model/record'
 
 export class RecordService {
   constructor(private readonly kv: KVNamespace) {}
@@ -30,8 +31,21 @@ export class RecordService {
   }
 
   async get(id: string): Promise<Record | null> {
-    const data = await this.kv.getWithMetadata(this.refKey(id), 'json')
+    const data = await this.kv.getWithMetadata<JSONValue, RecordMetadataObject>(
+      this.refKey(id),
+      'json'
+    )
     return Record.fromKVResult(id, data)
+  }
+
+  async getMetadata(id: string): Promise<RecordMetadata | null> {
+    // ignore the stream to get only the metadata
+    const data = await this.kv.getWithMetadata<RecordMetadata>(
+      this.refKey(id),
+      'stream'
+    )
+    if (!data.metadata) return null
+    return RecordMetadata.fromObject(data.metadata)
   }
 
   async create(record: Record, accessKey: string): Promise<Record> {
@@ -43,9 +57,12 @@ export class RecordService {
     return record
   }
 
-  async update(record: Record, data: unknown): Promise<Record | null>
-  async update(id: string, data: unknown): Promise<Record | null>
-  async update(entry: string | Record, data: unknown): Promise<Record | null> {
+  async update(record: Record, data: JSONValue): Promise<Record | null>
+  async update(id: string, data: JSONValue): Promise<Record | null>
+  async update(
+    entry: string | Record,
+    data: JSONValue
+  ): Promise<Record | null> {
     const refKey = this.refKey(entry)
     const id = typeof entry === 'string' ? entry : entry.id
     const record = await this.get(id)
