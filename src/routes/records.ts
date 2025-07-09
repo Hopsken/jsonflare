@@ -1,83 +1,166 @@
 import { Hono } from 'hono'
+import { describeRoute, DescribeRouteOptions } from 'hono-openapi'
+import { validator as zValidator, resolver } from 'hono-openapi/zod'
+
 import { randomKey } from '../lib/nanoid'
-import { Record } from '../model/record'
-import { RecordService } from '../service/record.service'
+import { Record, RecordMetaDataSchema } from '../model/record'
 import { HTTPException } from 'hono/http-exception'
 import { validateAccessKey } from './middlewares/validate-access-key'
 import { serviceInjector } from './middlewares/service-injector'
 import { host } from '../middlewares/host'
+import z from 'zod'
+import 'zod-openapi/extend'
 
-type HonoEnv = {
-  Variables: {
-    recordService: RecordService
-    sendRecord: (record: Record) => Response
-  }
-  Bindings: Env
-}
-
-const app = new Hono<HonoEnv>()
+const app = new Hono()
 
 app.use(serviceInjector)
 app.use(host('api.jsonflare.com'))
 
-app.post('/', async c => {
-  const data = await c.req.json()
-
-  const accessKey = c.req.header('X-Access-Key') || randomKey()
-  const recordService = c.get('recordService')
-
-  const record = Record.fromData(data)
-  const createdRecord = await recordService.create(record, accessKey)
-
-  c.header('X-Access-Key', accessKey)
-  c.header('X-Record-Id', createdRecord.id)
-  return c.json(createdRecord.data as object)
+const headerSchema = z.object({ 'X-Access-Key': z.string().optional() })
+const paramsSchema = z.object({
+  id: z.string().openapi({ description: 'record id' }),
 })
 
-app.get('/:id', validateAccessKey, async c => {
-  const id = c.req.param('id')
-  const recordService = c.get('recordService')
+const responseDescription = <T extends z.ZodSchema>(
+  schema: T
+): DescribeRouteOptions['responses'] => ({
+  200: {
+    description: 'Success',
+    content: {
+      'application/json': {
+        schema: resolver(schema),
+      },
+    },
+  },
+})
 
-  const record = await recordService.get(id)
-  if (!record) {
-    throw new HTTPException(404, { message: 'Record not found' })
+app.post(
+  '/',
+  describeRoute({
+    description: 'Create a JSON record',
+    responses: responseDescription(
+      z.any().openapi({
+        description: 'Any JSON value',
+        ref: 'JSON',
+      })
+    ),
+  }),
+  zValidator('header', headerSchema),
+  async c => {
+    const data = await c.req.json()
+
+    const accessKey = c.req.header('X-Access-Key') || randomKey()
+    const recordService = c.get('recordService')
+
+    const record = Record.fromData(data)
+    const createdRecord = await recordService.create(record, accessKey)
+
+    c.header('X-Access-Key', accessKey)
+    c.header('X-Record-Id', createdRecord.id)
+    return c.json(createdRecord.data as object)
   }
+)
 
-  return c.json(record.data as object)
-})
+app.get(
+  '/:id',
+  describeRoute({
+    description: 'Read a JSON record',
+    responses: responseDescription(
+      z.any().openapi({
+        description: 'Any JSON value',
+        ref: 'JSON',
+      })
+    ),
+  }),
+  zValidator('header', headerSchema),
+  zValidator('param', paramsSchema),
+  validateAccessKey,
+  async c => {
+    const id = c.req.param('id')
+    const recordService = c.get('recordService')
 
-app.get('/:id/metadata', validateAccessKey, async c => {
-  const id = c.req.param('id')
-  const recordService = c.get('recordService')
+    const record = await recordService.get(id)
+    if (!record) {
+      throw new HTTPException(404, { message: 'Record not found' })
+    }
 
-  const metadata = await recordService.getMetadata(id)
-  if (!metadata) {
-    throw new HTTPException(404, { message: 'Record not found' })
+    return c.json(record.data as object)
   }
+)
 
-  return c.json(metadata)
-})
+app.get(
+  '/:id/metadata',
+  describeRoute({
+    description: `Get a JSON record's metadata`,
+    responses: responseDescription(
+      RecordMetaDataSchema.openapi({
+        ref: 'RecordMetadata',
+        refType: 'output',
+        description: `Metadata of JSON records`,
+      })
+    ),
+  }),
+  zValidator('header', headerSchema),
+  zValidator('param', paramsSchema),
+  validateAccessKey,
+  async c => {
+    const id = c.req.param('id')
+    const recordService = c.get('recordService')
 
-app.put('/:id', validateAccessKey, async c => {
-  const id = c.req.param('id')
-  const data = await c.req.json()
-  const recordService = c.get('recordService')
+    const metadata = await recordService.getMetadata(id)
+    if (!metadata) {
+      throw new HTTPException(404, { message: 'Record not found' })
+    }
 
-  const updatedRecord = await recordService.update(id, data)
-  if (!updatedRecord) {
-    throw new HTTPException(404, { message: 'Record not found' })
+    return c.json(metadata)
   }
+)
 
-  return c.json(updatedRecord.data as object)
-})
+app.put(
+  '/:id',
+  describeRoute({
+    description: 'Update a JSON record',
+    responses: responseDescription(
+      z.any().openapi({
+        description: 'Any JSON value',
+        ref: 'JSON',
+      })
+    ),
+  }),
+  zValidator('header', headerSchema),
+  zValidator('param', paramsSchema),
+  validateAccessKey,
+  async c => {
+    const id = c.req.param('id')
+    const data = await c.req.json()
+    const recordService = c.get('recordService')
 
-app.delete('/:id', validateAccessKey, async c => {
-  const id = c.req.param('id')
-  const recordService = c.get('recordService')
+    const updatedRecord = await recordService.update(id, data)
+    if (!updatedRecord) {
+      throw new HTTPException(404, { message: 'Record not found' })
+    }
 
-  await recordService.delete(id)
+    return c.json(updatedRecord.data as object)
+  }
+)
 
-  return c.json({ ok: true })
-})
+app.delete(
+  '/:id',
+  describeRoute({
+    description: 'Delete a JSON record',
+    responses: responseDescription(z.object({ ok: z.boolean() })),
+  }),
+  zValidator('header', headerSchema),
+  zValidator('param', paramsSchema),
+  validateAccessKey,
+  async c => {
+    const id = c.req.param('id')
+    const recordService = c.get('recordService')
+
+    await recordService.delete(id)
+
+    return c.json({ ok: true })
+  }
+)
 
 export default app

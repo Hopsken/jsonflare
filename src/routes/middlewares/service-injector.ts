@@ -1,12 +1,13 @@
 import { createMiddleware } from 'hono/factory'
 import { RecordService } from '../../service/record.service'
 
-export const serviceInjector = createMiddleware<{
-  Variables: {
+declare module 'hono' {
+  interface ContextVariableMap {
     recordService: RecordService
   }
-  Bindings: Env
-}>((c, next) => {
+}
+
+export const serviceInjector = createMiddleware((c, next) => {
   c.set('recordService', new RecordService(c.env.records))
   return next()
 })

@@ -4,7 +4,7 @@ Store & retrieve your JSON data using Cloudflare KV namespace with ease.
 
 ## How to use
 
-See [API](./docs/api.md) for more details.
+See [API](https://jsonflare.com/doc) for more details.
 
 ## Development
 

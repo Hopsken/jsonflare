@@ -1,10 +1,19 @@
+import z from 'zod'
 import { JSONValue } from 'hono/utils/types'
 import { nanoid } from '../lib/nanoid'
+import { JSONValueSchema } from './json'
 
-export interface RecordMetadataObject {
-  createdAt: string
-  updatedAt: string
-}
+export const RecordMetaDataSchema = z.object({
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+})
+
+export const RecordSchema = z.object({
+  id: z.string(),
+  data: JSONValueSchema,
+})
+
+export type RecordMetadataObject = z.infer<typeof RecordMetaDataSchema>
 
 export class Record {
   public metadata: RecordMetadata

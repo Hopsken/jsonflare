@@ -1,15 +1,14 @@
 import { css } from 'hono/css'
 import { Layout } from './Layout'
-import { APIDescription } from './APIDescrption'
 
 const containerCls = css`
-  max-width: 48rem; /* Tailwind's max-w-7xl */
+  max-width: 48rem;
   margin-left: auto;
   margin-right: auto;
-  padding-left: 1rem; /* Tailwind's px-4 */
-  padding-right: 1rem; /* Tailwind's px-4 */
-  padding-top: 2rem; /* Tailwind's pt-8 */
-  padding-bottom: 2rem; /* Tailwind's pb-8 */
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
 `
 
 export default function Index() {
@@ -28,20 +27,31 @@ export default function Index() {
         </div>
         <div class='prose'>
           <p>
-            A global, low-latency JSON storage. Store & retrieve your JSON data
-            via handy API. Open sourced on{' '}
-            <a href='https://github.com/Hopsken/jsonflare'>Github</a>.
+            A JSON storage & hosting platform that <strong>Just Works</strong>.
+          </p>
+
+          <p>
+            <a href='https://github.com/Hopsken/jsonflare'>
+              <img
+                alt='Github'
+                src='https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white'
+              />
+            </a>
+          </p>
+
+          <p>
+            <a href='/doc'>API Document</a>
+            {' | '}
+            <a href='/openapi'>OpenAPI Schema</a>
           </p>
 
           <details>
             <summary>How this works</summary>
             <p>
-              Jsonflare is a simple wrapper of Cloudflare KV namespace. Running
+              JSONFlare is a simple wrapper of Cloudflare KV namespace. Running
               on Cloudflare Worker.
             </p>
           </details>
-
-          <APIDescription />
         </div>
       </div>
     </Layout>
