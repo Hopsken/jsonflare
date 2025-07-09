@@ -26,7 +26,6 @@ export class Record {
   }
 
   setData = (data: JSONValue) => {
-    console.log(`Record ${JSON.stringify(this)}}`)
     this.data = data
     this.metadata.setUpdatedAt()
   }
