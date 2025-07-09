@@ -13,6 +13,8 @@ export const Layout: FC = props => {
   return (
     <html lang='en'>
       <title>JSONFlare</title>
+      <meta charset="utf-8"></meta>
+      <meta name="viewport" content="width=device-width, initial-scale=1"></meta>
       <meta
         name='description'
         content='Store & retrieve your JSON data easily with JsonFlare. Share JSON snippets with others and access them from anywhere. JsonFlare is a simple and secure way to store and share your JSON data'
