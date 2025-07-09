@@ -55,6 +55,16 @@ export default function Index() {
               <li>OpenAPI schema for easy integration</li>
             </ul>
           </div>
+
+          <div>
+            <h2>BYOK (Bring Your Own Key)</h2>
+            <p>
+              JSONFlare uses the <code>X-Access-Key</code> header for
+              authorization. Pass a custom key in the <code>Create record</code>{' '}
+              request, or let JSONFlare generate one automatically, which will
+              be returned in the response header.
+            </p>
+          </div>
         </div>
       </div>
     </Layout>

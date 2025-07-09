@@ -24,7 +24,24 @@ app.get(
             type: 'object',
           },
         },
+        securitySchemes: {
+          apiKey: {
+            type: 'apiKey',
+            name: 'X-Access-Key',
+            in: 'header',
+            description: `BYOK(Bring Your Own Key),
+              pass the header in the create and following requests.
+              If omit, JSONFlare will generate one for you and return in response header.`,
+          },
+        },
       },
+
+      security: [
+        {
+          apiKey: [],
+        },
+      ],
+
       servers: [
         {
           url: 'https://api.jsonflare.com',
