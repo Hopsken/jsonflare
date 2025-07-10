@@ -50,8 +50,10 @@ export default function Index() {
             <ul>
               <li>Store and hosting any JSON objects</li>
               <li>Account-less, no need to create an account</li>
-              <li>Easy to use RESTful API</li>
               <li>Use JSON-Patch for partial updates</li>
+              <li>Auto validate JSON Schema</li>
+              <li>Create Public Read JSON records</li>
+              <li>Easy to use RESTful API</li>
               <li>OpenAPI schema for easy integration</li>
             </ul>
           </div>
@@ -63,6 +65,16 @@ export default function Index() {
               authorization. Pass a custom key in the <code>Create record</code>{' '}
               request, or let JSONFlare generate one automatically, which will
               be returned in the response header.
+            </p>
+          </div>
+
+          <div>
+            <h2>Auto validate JSON Schema</h2>
+            <p>
+              JSONFlare will automatically validate the JSON Schema when you
+              create or update a record (contains a <code>$schema</code> field).
+              If the JSON object does not match the schema, the request will
+              fail.
             </p>
           </div>
         </div>
