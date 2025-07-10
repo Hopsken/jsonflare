@@ -2,6 +2,8 @@ import { JSONValue } from 'hono/utils/types'
 import { Record, RecordMetadata, RecordMetadataObject } from '../model/record'
 import { JSONPatch } from '../model/json'
 import z4 from 'zod/v4'
+import { validateSchema } from '../lib/json-schema'
+import { HTTPException } from 'hono/http-exception'
 
 const countSchema = z4.coerce.number().int().positive().default(0)
 
@@ -9,6 +11,21 @@ export class RecordService {
   private _recordCountKey = 'records:count'
 
   constructor(private readonly kv: KVNamespace) {}
+
+  public async validate(record: Record) {
+    return validateSchema(record)
+  }
+
+  public async validateOrThrow(record: Record) {
+    const validated = await this.validate(record)
+
+    if (!validated.valid) {
+      throw new HTTPException(400, {
+        message: 'Invalid data, not conform to defined $schema.',
+        cause: validated.errors,
+      })
+    }
+  }
 
   public async getCount() {
     const count = await this.kv.get(this._recordCountKey)
@@ -70,6 +87,8 @@ export class RecordService {
   }
 
   async create(record: Record, accessKey: string): Promise<Record> {
+    await this.validateOrThrow(record)
+
     await this.setAccessKey(record, accessKey)
     await this.kv.put(this.refKey(record), JSON.stringify(record.data), {
       metadata: record.metadata,
@@ -95,6 +114,8 @@ export class RecordService {
 
     record.setData(data)
 
+    await this.validateOrThrow(record)
+
     await this.kv.put(refKey, JSON.stringify(record.data), {
       metadata: record.metadata,
     })
@@ -113,6 +134,8 @@ export class RecordService {
     if (!record) return null
 
     record.applyPatch(data)
+
+    await this.validateOrThrow(record)
 
     await this.kv.put(refKey, JSON.stringify(record.data), {
       metadata: record.metadata,

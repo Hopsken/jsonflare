@@ -16,6 +16,7 @@ import {
 import { serviceInjector } from './middlewares/service-injector'
 import { host } from '../middlewares/host'
 import { JSONPatchSchema } from '../model/json'
+import { errorHandler } from '../middlewares/error-handler'
 
 const app = new Hono()
 
@@ -27,6 +28,8 @@ app.use(
     allowHeaders: ['X-Access-Key'],
   })
 )
+
+app.onError(errorHandler)
 
 const headerSchema = z.object({
   'X-Access-Key': z.string().optional(),

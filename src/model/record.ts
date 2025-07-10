@@ -10,6 +10,12 @@ export enum PublicMode {
   // Write = 2
 }
 
+const jsonSchemaCompatible = z
+  .object({
+    $schema: z.string().url(),
+  })
+  .passthrough()
+
 export const RecordMetaDataSchema = z.object({
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
@@ -33,6 +39,15 @@ export class Record {
     this.metadata = RecordMetadata.fromObject(metadata)
   }
 
+  get schemaUrl() {
+    try {
+      const { $schema } = jsonSchemaCompatible.parse(this.data)
+      return $schema
+    } catch (_) {
+      return null
+    }
+  }
+
   setData = (data: JSONValue) => {
     this.data = data
     this.metadata.setUpdatedAt()
@@ -44,12 +59,12 @@ export class Record {
     return updated
   }
 
-  static fromData(data: JSONValue, mode: PublicMode) {
+  public static fromData(data: JSONValue, mode: PublicMode) {
     const metadata = RecordMetadata.create(new Date(), mode)
     return new Record(nanoid(), data, metadata)
   }
 
-  static fromKVResult(
+  public static fromKVResult(
     id: string,
     result: KVNamespaceGetWithMetadataResult<JSONValue, RecordMetadataObject>
   ): Record | null {
@@ -65,6 +80,11 @@ export class RecordMetadata {
     public updatedAt: string,
     public mode: PublicMode
   ) {}
+
+  setUpdatedAt = (date?: Date | string) => {
+    date = date || new Date()
+    this.updatedAt = date instanceof Date ? date.toISOString() : date
+  }
 
   static fromObject(
     obj: RecordMetadataObject | RecordMetadata
@@ -86,10 +106,5 @@ export class RecordMetadata {
       updatedAt: createdAt,
       mode,
     })
-  }
-
-  setUpdatedAt = (date?: Date | string) => {
-    date = date || new Date()
-    this.updatedAt = date instanceof Date ? date.toISOString() : date
   }
 }
