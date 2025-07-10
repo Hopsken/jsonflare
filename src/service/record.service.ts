@@ -1,10 +1,29 @@
 import { JSONValue } from 'hono/utils/types'
 import { Record, RecordMetadata, RecordMetadataObject } from '../model/record'
-import { JSONPatchDocument } from 'immutable-json-patch'
 import { JSONPatch } from '../model/json'
+import z4 from 'zod/v4'
+
+const countSchema = z4.coerce.number().int().positive().default(0)
 
 export class RecordService {
+  private _recordCountKey = 'records:count'
+
   constructor(private readonly kv: KVNamespace) {}
+
+  public async getCount() {
+    const count = await this.kv.get(this._recordCountKey)
+    return countSchema.catch(0).parse(count ?? undefined)
+  }
+
+  private async incTotalCount() {
+    const count = await this.getCount()
+    await this.kv.put(this._recordCountKey, String(count + 1))
+  }
+
+  private async decrTotalCount() {
+    const count = await this.getCount()
+    await this.kv.put(this._recordCountKey, String(Math.max(count - 1, 0)))
+  }
 
   refKey(record: string | Record): string {
     const id = typeof record === 'string' ? record : record.id
@@ -56,6 +75,10 @@ export class RecordService {
       metadata: record.metadata,
     })
 
+    await this.incTotalCount().catch(() =>
+      console.log('Unable to inc record count')
+    )
+
     return record
   }
 
@@ -106,6 +129,11 @@ export class RecordService {
 
     await this.kv.delete(refKey)
     await this.deleteAccessKey(entry)
+
+    await this.decrTotalCount().catch(() =>
+      console.log('Unable to decr record count')
+    )
+
     return true
   }
 }

@@ -4,11 +4,13 @@ import { Scalar } from '@scalar/hono-api-reference'
 
 import homepage from './routes/_index'
 import records from './routes/records'
+import system from './routes/system'
 
 const app = new Hono<{ Bindings: Env }>()
 
 app.route('/', homepage)
 app.route('/r', records)
+app.route('/system', system)
 app.get(
   '/openapi',
   openAPISpecs(app, {

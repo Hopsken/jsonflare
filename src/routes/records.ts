@@ -19,8 +19,12 @@ app.use(host('api.jsonflare.com'))
 
 const headerSchema = z.object({
   'X-Access-Key': z.string().optional(),
-  'Content-Type': z.literal('application/json'),
 })
+
+const jsonContentSchema = {
+  'Content-Type': z.literal('application/json'),
+}
+
 const paramsSchema = z.object({
   id: z.string().openapi({ description: 'record id' }),
 })
@@ -49,7 +53,7 @@ app.post(
       })
     ),
   }),
-  zValidator('header', headerSchema),
+  zValidator('header', headerSchema.extend(jsonContentSchema)),
   async c => {
     const data = await c.req.json()
 
@@ -131,7 +135,7 @@ app.put(
       })
     ),
   }),
-  zValidator('header', headerSchema),
+  zValidator('header', headerSchema.extend(jsonContentSchema)),
   zValidator('param', paramsSchema),
   validateAccessKey,
   async c => {
@@ -159,7 +163,7 @@ app.patch(
       })
     ),
   }),
-  zValidator('header', headerSchema),
+  zValidator('header', headerSchema.extend(jsonContentSchema)),
   zValidator('param', paramsSchema),
   zValidator(
     'json',
