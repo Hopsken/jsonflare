@@ -1,4 +1,8 @@
-import { Context, Hono } from 'hono'
+import { Hono } from 'hono'
+import { cors } from 'hono/cors'
+
+import z from 'zod'
+import 'zod-openapi/extend'
 import { describeRoute, DescribeRouteOptions } from 'hono-openapi'
 import { validator as zValidator, resolver } from 'hono-openapi/zod'
 
@@ -11,15 +15,18 @@ import {
 } from './middlewares/validate-access-key'
 import { serviceInjector } from './middlewares/service-injector'
 import { host } from '../middlewares/host'
-import z from 'zod'
-import 'zod-openapi/extend'
 import { JSONPatchSchema } from '../model/json'
-import z4 from 'zod/v4'
 
 const app = new Hono()
 
 app.use(serviceInjector)
 app.use(host('api.jsonflare.com'))
+app.use(
+  cors({
+    origin: '*',
+    allowHeaders: ['X-Access-Key'],
+  })
+)
 
 const headerSchema = z.object({
   'X-Access-Key': z.string().optional(),
