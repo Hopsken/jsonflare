@@ -1,16 +1,20 @@
-import { Hono } from 'hono'
+import { Context, Hono } from 'hono'
 import { describeRoute, DescribeRouteOptions } from 'hono-openapi'
 import { validator as zValidator, resolver } from 'hono-openapi/zod'
 
 import { randomKey } from '../lib/nanoid'
-import { Record, RecordMetaDataSchema } from '../model/record'
+import { PublicMode, Record, RecordMetaDataSchema } from '../model/record'
 import { HTTPException } from 'hono/http-exception'
-import { validateAccessKey } from './middlewares/validate-access-key'
+import {
+  publicModeCheck,
+  validateAccessKey,
+} from './middlewares/validate-access-key'
 import { serviceInjector } from './middlewares/service-injector'
 import { host } from '../middlewares/host'
 import z from 'zod'
 import 'zod-openapi/extend'
 import { JSONPatchSchema } from '../model/json'
+import z4 from 'zod/v4'
 
 const app = new Hono()
 
@@ -42,6 +46,16 @@ const responseDescription = <T extends z.ZodSchema>(
   },
 })
 
+/**
+ * POST Create record
+ */
+const querySchema = z.object({
+  public: z
+    .preprocess(val => (val === 'true' ? true : false), z.boolean())
+    .openapi({
+      description: 'Mark the record **Public Readable** (without access key)',
+    }),
+})
 app.post(
   '/',
   describeRoute({
@@ -54,13 +68,20 @@ app.post(
     ),
   }),
   zValidator('header', headerSchema.extend(jsonContentSchema)),
+  zValidator('query', querySchema),
   async c => {
     const data = await c.req.json()
 
     const accessKey = c.req.header('X-Access-Key') || randomKey()
     const recordService = c.get('recordService')
 
-    const record = Record.fromData(data)
+    const isPublic = c.req.valid('query').public
+
+    const record = Record.fromData(
+      data,
+      isPublic ? PublicMode.Read : PublicMode.None
+    )
+
     const createdRecord = await recordService.create(record, accessKey)
 
     c.header('X-Access-Key', accessKey)
@@ -82,7 +103,7 @@ app.get(
   }),
   zValidator('header', headerSchema),
   zValidator('param', paramsSchema),
-  validateAccessKey,
+  validateAccessKey(publicModeCheck),
   async c => {
     const id = c.req.param('id')
     const recordService = c.get('recordService')
@@ -110,12 +131,16 @@ app.get(
   }),
   zValidator('header', headerSchema),
   zValidator('param', paramsSchema),
-  validateAccessKey,
+  validateAccessKey(publicModeCheck),
   async c => {
     const id = c.req.param('id')
     const recordService = c.get('recordService')
+    const recordMetadataCache = c.var.recordMetadataCache
 
-    const metadata = await recordService.getMetadata(id)
+    // Use existing cache from validation process, saving another query
+    const metadata =
+      recordMetadataCache ?? (await recordService.getMetadata(id))
+
     if (!metadata) {
       throw new HTTPException(404, { message: 'Record not found' })
     }
@@ -137,7 +162,7 @@ app.put(
   }),
   zValidator('header', headerSchema.extend(jsonContentSchema)),
   zValidator('param', paramsSchema),
-  validateAccessKey,
+  validateAccessKey(),
   async c => {
     const id = c.req.param('id')
     const data = await c.req.json()
@@ -174,7 +199,7 @@ app.patch(
       })
     )
   ),
-  validateAccessKey,
+  validateAccessKey(),
   async c => {
     const id = c.req.valid('param').id
     const recordService = c.get('recordService')
@@ -198,7 +223,7 @@ app.delete(
   }),
   zValidator('header', headerSchema),
   zValidator('param', paramsSchema),
-  validateAccessKey,
+  validateAccessKey(),
   async c => {
     const id = c.req.param('id')
     const recordService = c.get('recordService')

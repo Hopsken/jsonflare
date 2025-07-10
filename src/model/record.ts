@@ -4,9 +4,16 @@ import { JSONValue } from 'hono/utils/types'
 import { nanoid } from '../lib/nanoid'
 import { JSONPatch, JSONValueSchema } from './json'
 
+export enum PublicMode {
+  None = 0,
+  Read = 1,
+  // Write = 2
+}
+
 export const RecordMetaDataSchema = z.object({
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
+  mode: z.nativeEnum(PublicMode),
 })
 
 export const RecordSchema = z.object({
@@ -37,9 +44,9 @@ export class Record {
     return updated
   }
 
-  static fromData(data: JSONValue) {
-    const createdAt = new Date().toISOString()
-    return new Record(nanoid(), data, new RecordMetadata(createdAt, createdAt))
+  static fromData(data: JSONValue, mode: PublicMode) {
+    const metadata = RecordMetadata.create(new Date(), mode)
+    return new Record(nanoid(), data, metadata)
   }
 
   static fromKVResult(
@@ -53,7 +60,11 @@ export class Record {
 }
 
 export class RecordMetadata {
-  constructor(public createdAt: string, public updatedAt: string) {}
+  constructor(
+    public createdAt: string,
+    public updatedAt: string,
+    public mode: PublicMode
+  ) {}
 
   static fromObject(
     obj: RecordMetadataObject | RecordMetadata
@@ -61,7 +72,20 @@ export class RecordMetadata {
     if (obj instanceof RecordMetadata) {
       return obj
     }
-    return new RecordMetadata(obj.createdAt, obj.updatedAt)
+    return new RecordMetadata(
+      obj.createdAt,
+      obj.updatedAt,
+      obj.mode ?? PublicMode.None
+    )
+  }
+
+  static create(at?: Date, mode: PublicMode = PublicMode.None) {
+    const createdAt = new Date(at ?? Date.now()).toISOString()
+    return RecordMetadata.fromObject({
+      createdAt,
+      updatedAt: createdAt,
+      mode,
+    })
   }
 
   setUpdatedAt = (date?: Date | string) => {
