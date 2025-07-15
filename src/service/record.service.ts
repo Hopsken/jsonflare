@@ -32,14 +32,32 @@ export class RecordService {
     return countSchema.catch(0).parse(count ?? undefined)
   }
 
-  private async incTotalCount() {
-    const count = await this.getCount()
-    await this.kv.put(this._recordCountKey, String(count + 1))
+  private async incTotalCount(): Promise<void> {
+    try {
+      const count = await this.getCount()
+      await this.kv.put(this._recordCountKey, String(count + 1))
+    } catch (error) {
+      console.error('Failed to increment record count:', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        operation: 'incTotalCount'
+      })
+      // Don't throw - count operations shouldn't fail the main operation
+    }
   }
 
-  private async decrTotalCount() {
-    const count = await this.getCount()
-    await this.kv.put(this._recordCountKey, String(Math.max(count - 1, 0)))
+  private async decrTotalCount(): Promise<void> {
+    try {
+      const count = await this.getCount()
+      await this.kv.put(this._recordCountKey, String(Math.max(count - 1, 0)))
+    } catch (error) {
+      console.error('Failed to decrement record count:', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        operation: 'decrTotalCount'
+      })
+      // Don't throw - count operations shouldn't fail the main operation
+    }
   }
 
   refKey(record: string | Record): string {
@@ -94,9 +112,7 @@ export class RecordService {
       metadata: record.metadata,
     })
 
-    await this.incTotalCount().catch(() =>
-      console.log('Unable to inc record count')
-    )
+    await this.incTotalCount()
 
     return record
   }
@@ -153,9 +169,7 @@ export class RecordService {
     await this.kv.delete(refKey)
     await this.deleteAccessKey(entry)
 
-    await this.decrTotalCount().catch(() =>
-      console.log('Unable to decr record count')
-    )
+    await this.decrTotalCount()
 
     return true
   }

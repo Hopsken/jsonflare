@@ -3,7 +3,8 @@
   "scripts": {
     "dev": "wrangler dev --host localhost",
     "deploy": "wrangler deploy --minify",
-    "cf-typegen": "wrangler types"
+    "cf-typegen": "wrangler types",
+    "typecheck": "tsc --noEmit"
   },
   "packageManager": "pnpm@9.15.0",
   "dependencies": {
