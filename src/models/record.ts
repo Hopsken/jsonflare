@@ -2,32 +2,14 @@ import z from 'zod'
 import { immutableJSONPatch, JSONPatchDocument } from 'immutable-json-patch'
 import { JSONValue } from 'hono/utils/types'
 import { nanoid } from '../lib/nanoid'
-import { JSONPatch, JSONValueSchema } from './json'
-
-export enum PublicMode {
-  None = 0,
-  Read = 1,
-  // Write = 2
-}
+import { JSONPatch } from '../schemas/json'
+import { PublicMode, RecordMetadataObject } from '../schemas/record'
 
 const jsonSchemaCompatible = z
   .object({
     $schema: z.string().url(),
   })
   .passthrough()
-
-export const RecordMetaDataSchema = z.object({
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
-  mode: z.nativeEnum(PublicMode),
-})
-
-export const RecordSchema = z.object({
-  id: z.string(),
-  data: JSONValueSchema,
-})
-
-export type RecordMetadataObject = z.infer<typeof RecordMetaDataSchema>
 
 export class Record {
   public metadata: RecordMetadata

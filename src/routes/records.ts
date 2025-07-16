@@ -7,7 +7,8 @@ import { describeRoute, DescribeRouteOptions } from 'hono-openapi'
 import { validator as zValidator, resolver } from 'hono-openapi/zod'
 
 import { randomKey } from '../lib/nanoid'
-import { PublicMode, Record, RecordMetaDataSchema } from '../model/record'
+import { Record } from '../models/record'
+import { PublicMode, RecordMetaDataSchema } from '../schemas/record'
 import { HTTPException } from 'hono/http-exception'
 import {
   publicModeCheck,
@@ -15,7 +16,7 @@ import {
 } from './middlewares/validate-access-key'
 import { serviceInjector } from './middlewares/service-injector'
 import { host } from '../middlewares/host'
-import { JSONPatchSchema } from '../model/json'
+import { JSONPatchSchema } from '../schemas/json'
 import { errorHandler } from '../middlewares/error-handler'
 
 const app = new Hono()
