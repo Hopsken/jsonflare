@@ -19,13 +19,11 @@ export const JSONValueSchema: z.ZodType<JSONValue> = z.lazy(() =>
   ])
 )
 
-export type JSONPatch = z.infer<typeof JSONPatchSchema>
-
 export const JSONPatchSchema = z.union([
   z.object({
     op: z.literal('add'),
     path: z.string(),
-    value: z.any(),
+    value: JSONValueSchema,
   }),
   z.object({
     op: z.literal('remove'),
@@ -34,7 +32,7 @@ export const JSONPatchSchema = z.union([
   z.object({
     op: z.literal('replace'),
     path: z.string(),
-    value: z.any(),
+    value: JSONValueSchema,
   }),
   z.object({
     op: z.literal('copy'),
@@ -49,6 +47,8 @@ export const JSONPatchSchema = z.union([
   z.object({
     op: z.literal('test'),
     path: z.string(),
-    value: z.any(),
+    value: JSONValueSchema,
   }),
 ])
+
+export type JSONPatch = z.infer<typeof JSONPatchSchema>

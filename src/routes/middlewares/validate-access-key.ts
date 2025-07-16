@@ -2,7 +2,7 @@ import { createMiddleware } from 'hono/factory'
 import { HTTPException } from 'hono/http-exception'
 import { RecordService } from '../../service/record.service'
 import { Context } from 'hono'
-import { PublicMode } from '../../model/record'
+import { PublicMode } from '../../schemas/record'
 
 type CheckConditionFn = (c: Context) => Promise<boolean>
 

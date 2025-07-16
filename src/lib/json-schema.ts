@@ -4,7 +4,7 @@ import {
   ValidationResult,
   Validator,
 } from '@cfworker/json-schema'
-import { Record } from '../model/record'
+import { Record } from '../models/record'
 import ky from 'ky'
 
 export async function validateSchema(
