@@ -140,27 +140,31 @@ export class RecordService {
     return record
   }
 
-  async update(record: Record, data: JSONValue): Promise<Record | null>
-  async update(id: string, data: JSONValue): Promise<Record | null>
-  async update(
-    entry: string | Record,
-    data: JSONValue
-  ): Promise<Record | null> {
-    return this._updateRecord(entry, (record) => record.setData(data))
+  async updateById(id: string, data: JSONValue): Promise<Record | null> {
+    return this._updateRecord(id, (record) => record.setData(data))
   }
 
-  async patch(record: Record, data: JSONPatch[]): Promise<Record | null>
-  async patch(id: string, data: JSONPatch[]): Promise<Record | null>
-  async patch(
-    entry: string | Record,
-    data: JSONPatch[]
-  ): Promise<Record | null> {
-    return this._updateRecord(entry, (record) => record.applyPatch(data))
+  async update(record: Record, data: JSONValue): Promise<Record | null> {
+    return this._updateRecord(record, (record) => record.setData(data))
   }
 
-  async delete(id: string): Promise<boolean>
-  async delete(record: Record): Promise<boolean>
-  async delete(entry: string | Record): Promise<boolean> {
+  async patchById(id: string, data: JSONPatch[]): Promise<Record | null> {
+    return this._updateRecord(id, (record) => record.applyPatch(data))
+  }
+
+  async patch(record: Record, data: JSONPatch[]): Promise<Record | null> {
+    return this._updateRecord(record, (record) => record.applyPatch(data))
+  }
+
+  async deleteById(id: string): Promise<boolean> {
+    return this._deleteRecord(id)
+  }
+
+  async delete(record: Record): Promise<boolean> {
+    return this._deleteRecord(record)
+  }
+
+  private async _deleteRecord(entry: string | Record): Promise<boolean> {
     const refKey = this.refKey(entry)
     const exists = await this.kv.get(refKey)
     if (!exists) return true

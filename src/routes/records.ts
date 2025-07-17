@@ -180,7 +180,7 @@ app.put(
     const data = await c.req.json()
     const recordService = c.get('recordService')
 
-    const updatedRecord = await recordService.update(id, data)
+    const updatedRecord = await recordService.updateById(id, data)
     if (!updatedRecord) {
       throw new RecordNotFoundError()
     }
@@ -218,7 +218,7 @@ app.patch(
 
     const patch = c.req.valid('json')
 
-    const updatedRecord = await recordService.patch(id, patch)
+    const updatedRecord = await recordService.patchById(id, patch)
     if (!updatedRecord) {
       throw new RecordNotFoundError()
     }
@@ -240,7 +240,7 @@ app.delete(
     const id = c.req.param('id')
     const recordService = c.get('recordService')
 
-    await recordService.delete(id)
+    await recordService.deleteById(id)
 
     return c.json({ ok: true })
   }
