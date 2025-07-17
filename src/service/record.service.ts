@@ -7,12 +7,11 @@ import { validateSchema } from '../lib/json-schema'
 import { HTTPException } from 'hono/http-exception'
 import { logger } from '../lib/logger'
 import { randomKey } from '../lib/nanoid'
+import { KeyBuilder } from '../lib/key-builder'
 
 const countSchema = z4.coerce.number().int().positive().default(0)
 
 export class RecordService {
-  private _recordCountKey = 'records:count'
-
   constructor(private readonly kv: KVNamespace) {}
 
   public async validate(record: Record) {
@@ -31,14 +30,14 @@ export class RecordService {
   }
 
   public async getCount() {
-    const count = await this.kv.get(this._recordCountKey)
+    const count = await this.kv.get(KeyBuilder.forRecordCount())
     return countSchema.catch(0).parse(count ?? undefined)
   }
 
   private async incTotalCount(): Promise<void> {
     try {
       const count = await this.getCount()
-      await this.kv.put(this._recordCountKey, String(count + 1))
+      await this.kv.put(KeyBuilder.forRecordCount(), String(count + 1))
     } catch (error) {
       logger.error('Failed to increment record count', {
         error: error instanceof Error ? error.message : String(error),
@@ -53,7 +52,7 @@ export class RecordService {
   private async decrTotalCount(): Promise<void> {
     try {
       const count = await this.getCount()
-      await this.kv.put(this._recordCountKey, String(Math.max(count - 1, 0)))
+      await this.kv.put(KeyBuilder.forRecordCount(), String(Math.max(count - 1, 0)))
     } catch (error) {
       logger.error('Failed to decrement record count', {
         error: error instanceof Error ? error.message : String(error),
@@ -65,14 +64,16 @@ export class RecordService {
     }
   }
 
+  private getRecordId(record: string | Record): string {
+    return typeof record === 'string' ? record : record.id
+  }
+
   refKey(record: string | Record): string {
-    const id = typeof record === 'string' ? record : record.id
-    return `record:${id}`
+    return KeyBuilder.forRecord(this.getRecordId(record))
   }
 
   refAccessKey(record: string | Record): string {
-    const id = typeof record === 'string' ? record : record.id
-    return `record:${id}:accesskey`
+    return KeyBuilder.forAccessKey(this.getRecordId(record))
   }
 
   async getAccessKey(id: string | Record): Promise<string | null> {
