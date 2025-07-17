@@ -5,12 +5,13 @@ import { JSONPatch } from '../schemas/json'
 import z4 from 'zod/v4'
 import { validateSchema } from '../lib/json-schema'
 import { HTTPException } from 'hono/http-exception'
+import { logger } from '../lib/logger'
+import { randomKey } from '../lib/nanoid'
+import { KeyBuilder } from '../lib/key-builder'
 
 const countSchema = z4.coerce.number().int().positive().default(0)
 
 export class RecordService {
-  private _recordCountKey = 'records:count'
-
   constructor(private readonly kv: KVNamespace) {}
 
   public async validate(record: Record) {
@@ -29,46 +30,50 @@ export class RecordService {
   }
 
   public async getCount() {
-    const count = await this.kv.get(this._recordCountKey)
+    const count = await this.kv.get(KeyBuilder.forRecordCount())
     return countSchema.catch(0).parse(count ?? undefined)
   }
 
   private async incTotalCount(): Promise<void> {
     try {
       const count = await this.getCount()
-      await this.kv.put(this._recordCountKey, String(count + 1))
+      await this.kv.put(KeyBuilder.forRecordCount(), String(count + 1))
     } catch (error) {
-      console.error('Failed to increment record count:', {
+      logger.error('Failed to increment record count', {
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
         operation: 'incTotalCount'
       })
       // Don't throw - count operations shouldn't fail the main operation
+      // The count will be eventually consistent when other operations succeed
     }
   }
 
   private async decrTotalCount(): Promise<void> {
     try {
       const count = await this.getCount()
-      await this.kv.put(this._recordCountKey, String(Math.max(count - 1, 0)))
+      await this.kv.put(KeyBuilder.forRecordCount(), String(Math.max(count - 1, 0)))
     } catch (error) {
-      console.error('Failed to decrement record count:', {
+      logger.error('Failed to decrement record count', {
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
         operation: 'decrTotalCount'
       })
       // Don't throw - count operations shouldn't fail the main operation
+      // The count will be eventually consistent when other operations succeed
     }
   }
 
+  private getRecordId(record: string | Record): string {
+    return typeof record === 'string' ? record : record.id
+  }
+
   refKey(record: string | Record): string {
-    const id = typeof record === 'string' ? record : record.id
-    return `record:${id}`
+    return KeyBuilder.forRecord(this.getRecordId(record))
   }
 
   refAccessKey(record: string | Record): string {
-    const id = typeof record === 'string' ? record : record.id
-    return `record:${id}:accesskey`
+    return KeyBuilder.forAccessKey(this.getRecordId(record))
   }
 
   async getAccessKey(id: string | Record): Promise<string | null> {
@@ -105,31 +110,31 @@ export class RecordService {
     return RecordMetadata.fromObject(data.metadata)
   }
 
-  async create(record: Record, accessKey: string): Promise<Record> {
+  async create(record: Record, accessKey?: string): Promise<{ record: Record; accessKey: string }> {
     await this.validateOrThrow(record)
 
-    await this.setAccessKey(record, accessKey)
+    const finalAccessKey = accessKey || randomKey()
+    
+    await this.setAccessKey(record, finalAccessKey)
     await this.kv.put(this.refKey(record), JSON.stringify(record.data), {
       metadata: record.metadata,
     })
 
     await this.incTotalCount()
 
-    return record
+    return { record, accessKey: finalAccessKey }
   }
 
-  async update(record: Record, data: JSONValue): Promise<Record | null>
-  async update(id: string, data: JSONValue): Promise<Record | null>
-  async update(
+  private async _updateRecord(
     entry: string | Record,
-    data: JSONValue
+    transformer: (record: Record) => void
   ): Promise<Record | null> {
     const refKey = this.refKey(entry)
     const id = typeof entry === 'string' ? entry : entry.id
     const record = await this.get(id)
     if (!record) return null
 
-    record.setData(data)
+    transformer(record)
 
     await this.validateOrThrow(record)
 
@@ -139,30 +144,31 @@ export class RecordService {
     return record
   }
 
-  async patch(record: Record, data: JSONPatch[]): Promise<Record | null>
-  async patch(id: string, data: JSONPatch[]): Promise<Record | null>
-  async patch(
-    entry: string | Record,
-    data: JSONPatch[]
-  ): Promise<Record | null> {
-    const refKey = this.refKey(entry)
-    const id = typeof entry === 'string' ? entry : entry.id
-    const record = await this.get(id)
-    if (!record) return null
-
-    record.applyPatch(data)
-
-    await this.validateOrThrow(record)
-
-    await this.kv.put(refKey, JSON.stringify(record.data), {
-      metadata: record.metadata,
-    })
-    return record
+  async updateById(id: string, data: JSONValue): Promise<Record | null> {
+    return this._updateRecord(id, (record) => record.setData(data))
   }
 
-  async delete(id: string): Promise<boolean>
-  async delete(record: Record): Promise<boolean>
-  async delete(entry: string | Record): Promise<boolean> {
+  async update(record: Record, data: JSONValue): Promise<Record | null> {
+    return this._updateRecord(record, (record) => record.setData(data))
+  }
+
+  async patchById(id: string, data: JSONPatch[]): Promise<Record | null> {
+    return this._updateRecord(id, (record) => record.applyPatch(data))
+  }
+
+  async patch(record: Record, data: JSONPatch[]): Promise<Record | null> {
+    return this._updateRecord(record, (record) => record.applyPatch(data))
+  }
+
+  async deleteById(id: string): Promise<boolean> {
+    return this._deleteRecord(id)
+  }
+
+  async delete(record: Record): Promise<boolean> {
+    return this._deleteRecord(record)
+  }
+
+  private async _deleteRecord(entry: string | Record): Promise<boolean> {
     const refKey = this.refKey(entry)
     const exists = await this.kv.get(refKey)
     if (!exists) return true

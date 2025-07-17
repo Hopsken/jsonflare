@@ -6,7 +6,6 @@ import 'zod-openapi/extend'
 import { describeRoute, DescribeRouteOptions } from 'hono-openapi'
 import { validator as zValidator, resolver } from 'hono-openapi/zod'
 
-import { randomKey } from '../lib/nanoid'
 import { Record } from '../models/record'
 import { PublicMode, RecordMetaDataSchema } from '../schemas/record'
 import { HTTPException } from 'hono/http-exception'
@@ -18,6 +17,8 @@ import { serviceInjector } from './middlewares/service-injector'
 import { host } from '../middlewares/host'
 import { JSONPatchSchema } from '../schemas/json'
 import { errorHandler } from '../middlewares/error-handler'
+import { RecordNotFoundError } from '../lib/errors'
+import { setRecordCreationHeaders } from '../lib/response-helpers'
 
 const app = new Hono()
 
@@ -82,21 +83,18 @@ app.post(
   zValidator('query', querySchema),
   async c => {
     const data = await c.req.json()
-
-    const accessKey = c.req.header('X-Access-Key') || randomKey()
     const recordService = c.get('recordService')
-
     const isPublic = c.req.valid('query').public
+    const providedAccessKey = c.req.header('X-Access-Key')
 
     const record = Record.fromData(
       data,
       isPublic ? PublicMode.Read : PublicMode.None
     )
 
-    const createdRecord = await recordService.create(record, accessKey)
+    const { record: createdRecord, accessKey } = await recordService.create(record, providedAccessKey)
 
-    c.header('X-Access-Key', accessKey)
-    c.header('X-Record-Id', createdRecord.id)
+    setRecordCreationHeaders(c, createdRecord, accessKey)
     return c.json(createdRecord.data as object)
   }
 )
@@ -121,7 +119,7 @@ app.get(
 
     const record = await recordService.get(id)
     if (!record) {
-      throw new HTTPException(404, { message: 'Record not found' })
+      throw new RecordNotFoundError()
     }
 
     return c.json(record.data as object)
@@ -153,7 +151,7 @@ app.get(
       recordMetadataCache ?? (await recordService.getMetadata(id))
 
     if (!metadata) {
-      throw new HTTPException(404, { message: 'Record not found' })
+      throw new RecordNotFoundError()
     }
 
     return c.json(metadata)
@@ -179,9 +177,9 @@ app.put(
     const data = await c.req.json()
     const recordService = c.get('recordService')
 
-    const updatedRecord = await recordService.update(id, data)
+    const updatedRecord = await recordService.updateById(id, data)
     if (!updatedRecord) {
-      throw new HTTPException(404, { message: 'Record not found' })
+      throw new RecordNotFoundError()
     }
 
     return c.json(updatedRecord.data as object)
@@ -217,9 +215,9 @@ app.patch(
 
     const patch = c.req.valid('json')
 
-    const updatedRecord = await recordService.patch(id, patch)
+    const updatedRecord = await recordService.patchById(id, patch)
     if (!updatedRecord) {
-      throw new HTTPException(404, { message: 'Record not found' })
+      throw new RecordNotFoundError()
     }
 
     return c.json(updatedRecord.data as object)
@@ -239,7 +237,7 @@ app.delete(
     const id = c.req.param('id')
     const recordService = c.get('recordService')
 
-    await recordService.delete(id)
+    await recordService.deleteById(id)
 
     return c.json({ ok: true })
   }
