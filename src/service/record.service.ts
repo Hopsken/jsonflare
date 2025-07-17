@@ -5,6 +5,7 @@ import { JSONPatch } from '../schemas/json'
 import z4 from 'zod/v4'
 import { validateSchema } from '../lib/json-schema'
 import { HTTPException } from 'hono/http-exception'
+import { logger } from '../lib/logger'
 
 const countSchema = z4.coerce.number().int().positive().default(0)
 
@@ -38,12 +39,13 @@ export class RecordService {
       const count = await this.getCount()
       await this.kv.put(this._recordCountKey, String(count + 1))
     } catch (error) {
-      console.error('Failed to increment record count:', {
+      logger.error('Failed to increment record count', {
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
         operation: 'incTotalCount'
       })
       // Don't throw - count operations shouldn't fail the main operation
+      // The count will be eventually consistent when other operations succeed
     }
   }
 
@@ -52,12 +54,13 @@ export class RecordService {
       const count = await this.getCount()
       await this.kv.put(this._recordCountKey, String(Math.max(count - 1, 0)))
     } catch (error) {
-      console.error('Failed to decrement record count:', {
+      logger.error('Failed to decrement record count', {
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
         operation: 'decrTotalCount'
       })
       // Don't throw - count operations shouldn't fail the main operation
+      // The count will be eventually consistent when other operations succeed
     }
   }
 
