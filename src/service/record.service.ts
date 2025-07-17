@@ -118,18 +118,16 @@ export class RecordService {
     return record
   }
 
-  async update(record: Record, data: JSONValue): Promise<Record | null>
-  async update(id: string, data: JSONValue): Promise<Record | null>
-  async update(
+  private async _updateRecord(
     entry: string | Record,
-    data: JSONValue
+    transformer: (record: Record) => void
   ): Promise<Record | null> {
     const refKey = this.refKey(entry)
     const id = typeof entry === 'string' ? entry : entry.id
     const record = await this.get(id)
     if (!record) return null
 
-    record.setData(data)
+    transformer(record)
 
     await this.validateOrThrow(record)
 
@@ -139,25 +137,22 @@ export class RecordService {
     return record
   }
 
+  async update(record: Record, data: JSONValue): Promise<Record | null>
+  async update(id: string, data: JSONValue): Promise<Record | null>
+  async update(
+    entry: string | Record,
+    data: JSONValue
+  ): Promise<Record | null> {
+    return this._updateRecord(entry, (record) => record.setData(data))
+  }
+
   async patch(record: Record, data: JSONPatch[]): Promise<Record | null>
   async patch(id: string, data: JSONPatch[]): Promise<Record | null>
   async patch(
     entry: string | Record,
     data: JSONPatch[]
   ): Promise<Record | null> {
-    const refKey = this.refKey(entry)
-    const id = typeof entry === 'string' ? entry : entry.id
-    const record = await this.get(id)
-    if (!record) return null
-
-    record.applyPatch(data)
-
-    await this.validateOrThrow(record)
-
-    await this.kv.put(refKey, JSON.stringify(record.data), {
-      metadata: record.metadata,
-    })
-    return record
+    return this._updateRecord(entry, (record) => record.applyPatch(data))
   }
 
   async delete(id: string): Promise<boolean>
