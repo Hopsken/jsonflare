@@ -3,6 +3,7 @@ import { HTTPException } from 'hono/http-exception'
 import { RecordService } from '../../service/record.service'
 import { Context } from 'hono'
 import { PublicMode } from '../../schemas/record'
+import { RecordNotFoundError } from '../../lib/errors'
 
 type CheckConditionFn = (c: Context) => Promise<boolean>
 
@@ -20,7 +21,7 @@ export const publicModeCheck: CheckConditionFn = async (
   const metadata = await recordService.getMetadata(id)
 
   if (!metadata) {
-    throw new HTTPException(404, { message: 'No record' })
+    throw new RecordNotFoundError()
   }
 
   c.set('recordMetadataCache', metadata)
@@ -59,7 +60,7 @@ export const validateAccessKey = (checkCondition?: CheckConditionFn) => {
 
     const expectedAccessKey = await recordService.getAccessKey(id)
     if (!expectedAccessKey) {
-      throw new HTTPException(404, { message: 'Record not found' })
+      throw new RecordNotFoundError()
     }
     if (expectedAccessKey !== accessKey) {
       throw new HTTPException(401, { message: 'Invalid access key' })

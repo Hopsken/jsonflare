@@ -18,6 +18,7 @@ import { serviceInjector } from './middlewares/service-injector'
 import { host } from '../middlewares/host'
 import { JSONPatchSchema } from '../schemas/json'
 import { errorHandler } from '../middlewares/error-handler'
+import { RecordNotFoundError } from '../lib/errors'
 
 const app = new Hono()
 
@@ -121,7 +122,7 @@ app.get(
 
     const record = await recordService.get(id)
     if (!record) {
-      throw new HTTPException(404, { message: 'Record not found' })
+      throw new RecordNotFoundError()
     }
 
     return c.json(record.data as object)
@@ -153,7 +154,7 @@ app.get(
       recordMetadataCache ?? (await recordService.getMetadata(id))
 
     if (!metadata) {
-      throw new HTTPException(404, { message: 'Record not found' })
+      throw new RecordNotFoundError()
     }
 
     return c.json(metadata)
@@ -181,7 +182,7 @@ app.put(
 
     const updatedRecord = await recordService.update(id, data)
     if (!updatedRecord) {
-      throw new HTTPException(404, { message: 'Record not found' })
+      throw new RecordNotFoundError()
     }
 
     return c.json(updatedRecord.data as object)
@@ -219,7 +220,7 @@ app.patch(
 
     const updatedRecord = await recordService.patch(id, patch)
     if (!updatedRecord) {
-      throw new HTTPException(404, { message: 'Record not found' })
+      throw new RecordNotFoundError()
     }
 
     return c.json(updatedRecord.data as object)
