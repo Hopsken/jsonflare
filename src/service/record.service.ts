@@ -6,6 +6,7 @@ import z4 from 'zod/v4'
 import { validateSchema } from '../lib/json-schema'
 import { HTTPException } from 'hono/http-exception'
 import { logger } from '../lib/logger'
+import { randomKey } from '../lib/nanoid'
 
 const countSchema = z4.coerce.number().int().positive().default(0)
 
@@ -108,17 +109,19 @@ export class RecordService {
     return RecordMetadata.fromObject(data.metadata)
   }
 
-  async create(record: Record, accessKey: string): Promise<Record> {
+  async create(record: Record, accessKey?: string): Promise<{ record: Record; accessKey: string }> {
     await this.validateOrThrow(record)
 
-    await this.setAccessKey(record, accessKey)
+    const finalAccessKey = accessKey || randomKey()
+    
+    await this.setAccessKey(record, finalAccessKey)
     await this.kv.put(this.refKey(record), JSON.stringify(record.data), {
       metadata: record.metadata,
     })
 
     await this.incTotalCount()
 
-    return record
+    return { record, accessKey: finalAccessKey }
   }
 
   private async _updateRecord(
